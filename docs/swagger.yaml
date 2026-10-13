@@ -1,0 +1,247 @@
+basePath: /api
+definitions:
+  dto.CreateMenuRequest:
+    properties:
+      name:
+        example: System Code
+        maxLength: 255
+        type: string
+      parent_id:
+        example: 56320ee9-6af6-11ed-a7ba-f220afe5e4a9
+        format: uuid
+        type: string
+    required:
+    - name
+    type: object
+  dto.UpdateMenuRequest:
+    properties:
+      name:
+        example: System Code
+        maxLength: 255
+        type: string
+    required:
+    - name
+    type: object
+  handler.ErrorDetail:
+    properties:
+      code:
+        example: VALIDATION_ERROR
+        type: string
+      message:
+        example: name must not be empty
+        type: string
+    type: object
+  handler.ErrorResponse:
+    properties:
+      error:
+        $ref: '#/definitions/handler.ErrorDetail'
+    type: object
+  model.Menu:
+    properties:
+      created_at:
+        type: string
+      depth:
+        example: 2
+        type: integer
+      id:
+        example: 968d9ed2-8e06-4988-bd2a-b94255f4bbab
+        format: uuid
+        type: string
+      name:
+        example: System Code
+        type: string
+      parent_id:
+        example: 56320ee9-6af6-11ed-a7ba-f220afe5e4a9
+        format: uuid
+        type: string
+      parent_name:
+        example: Systems
+        type: string
+      position:
+        example: 0
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  model.MenuNode:
+    properties:
+      children:
+        items:
+          $ref: '#/definitions/model.MenuNode'
+        type: array
+      depth:
+        example: 0
+        type: integer
+      id:
+        example: 968d9ed2-8e06-4988-bd2a-b94255f4bbab
+        format: uuid
+        type: string
+      name:
+        example: System Management
+        type: string
+      parent_id:
+        format: uuid
+        type: string
+      position:
+        example: 0
+        type: integer
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: REST API for managing a hierarchical menu tree with unlimited depth.
+  title: Menu Tree API
+  version: "1.0"
+paths:
+  /menus:
+    get:
+      description: Returns all root menus with their descendants nested in "children".
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.MenuNode'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: Get menu tree
+      tags:
+      - menus
+    post:
+      consumes:
+      - application/json
+      description: Creates a menu item. Omit parent_id to create a root menu. Depth
+        is calculated from the parent.
+      parameters:
+      - description: Menu data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateMenuRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.Menu'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Parent menu not found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: Create a menu
+      tags:
+      - menus
+  /menus/{id}:
+    delete:
+      description: Deletes a menu item and all of its descendants.
+      parameters:
+      - description: Menu ID (UUID)
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: Delete a menu
+      tags:
+      - menus
+    get:
+      description: Returns one menu item, including parent_name when it has a parent.
+      parameters:
+      - description: Menu ID (UUID)
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Menu'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: Get a single menu
+      tags:
+      - menus
+    put:
+      consumes:
+      - application/json
+      description: Updates the name of a menu item.
+      parameters:
+      - description: Menu ID (UUID)
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: New menu data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateMenuRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Menu'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: Update a menu
+      tags:
+      - menus
+swagger: "2.0"
