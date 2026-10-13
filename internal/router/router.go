@@ -3,6 +3,7 @@ package router
 import (
 	"net/http"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -12,6 +13,12 @@ import (
 
 func New(menuHandler *handler.MenuHandler) *gin.Engine {
 	r := gin.Default()
+
+	r.Use(cors.New(cors.Config{
+		AllowOrigins: []string{"http://localhost:3000"},
+		AllowMethods: []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowHeaders: []string{"Content-Type"},
+	}))
 
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
@@ -26,6 +33,8 @@ func New(menuHandler *handler.MenuHandler) *gin.Engine {
 		menus.POST("", menuHandler.Create)
 		menus.PUT("/:id", menuHandler.Update)
 		menus.DELETE("/:id", menuHandler.Delete)
+		menus.PATCH("/:id/move", menuHandler.Move)
+		menus.PATCH("/:id/reorder", menuHandler.Reorder)
 	}
 
 	return r

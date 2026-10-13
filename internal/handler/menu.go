@@ -146,3 +146,66 @@ func (h *MenuHandler) Delete(c *gin.Context) {
 	}
 	c.Status(http.StatusNoContent)
 }
+
+// Move godoc
+// @Summary      Move a menu to another parent
+// @Description  Moves a menu (with all its descendants) under a different parent. Use parent_id null for root. Position is 0-based; omit it to append at the end. Rejects moving a menu into itself or its own descendants.
+// @Tags         menus
+// @Accept       json
+// @Produce      json
+// @Param        id    path      string               true  "Menu ID (UUID)"  format(uuid)
+// @Param        body  body      dto.MoveMenuRequest  true  "Target parent and position"
+// @Success      200   {object}  model.Menu
+// @Failure      400   {object}  ErrorResponse
+// @Failure      404   {object}  ErrorResponse  "Menu or parent not found"
+// @Failure      409   {object}  ErrorResponse  "Invalid move (cycle)"
+// @Failure      500   {object}  ErrorResponse
+// @Router       /menus/{id}/move [patch]
+func (h *MenuHandler) Move(c *gin.Context) {
+	id, ok := parseID(c)
+	if !ok {
+		return
+	}
+	var req dto.MoveMenuRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondError(c, http.StatusBadRequest, "VALIDATION_ERROR", "invalid request body: parent_id must be a UUID or null, position must be >= 0")
+		return
+	}
+	menu, err := h.svc.Move(c.Request.Context(), id, req.ParentID, req.Position)
+	if err != nil {
+		handleServiceError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, menu)
+}
+
+// Reorder godoc
+// @Summary      Reorder a menu within its level
+// @Description  Changes the position of a menu among its siblings (same parent). Position is 0-based and clamped to the last index.
+// @Tags         menus
+// @Accept       json
+// @Produce      json
+// @Param        id    path      string                  true  "Menu ID (UUID)"  format(uuid)
+// @Param        body  body      dto.ReorderMenuRequest  true  "New position"
+// @Success      200   {object}  model.Menu
+// @Failure      400   {object}  ErrorResponse
+// @Failure      404   {object}  ErrorResponse
+// @Failure      500   {object}  ErrorResponse
+// @Router       /menus/{id}/reorder [patch]
+func (h *MenuHandler) Reorder(c *gin.Context) {
+	id, ok := parseID(c)
+	if !ok {
+		return
+	}
+	var req dto.ReorderMenuRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondError(c, http.StatusBadRequest, "VALIDATION_ERROR", "invalid request body: position is required and must be >= 0")
+		return
+	}
+	menu, err := h.svc.Reorder(c.Request.Context(), id, *req.Position)
+	if err != nil {
+		handleServiceError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, menu)
+}

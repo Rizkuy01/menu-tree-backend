@@ -32,6 +32,10 @@ func handleServiceError(c *gin.Context, err error) {
 		respondError(c, http.StatusNotFound, "PARENT_NOT_FOUND", err.Error())
 	case errors.Is(err, model.ErrInvalidName):
 		respondError(c, http.StatusBadRequest, "VALIDATION_ERROR", err.Error())
+	case errors.Is(err, model.ErrInvalidPosition):
+		respondError(c, http.StatusBadRequest, "VALIDATION_ERROR", err.Error())
+	case errors.Is(err, model.ErrCycle):
+		respondError(c, http.StatusConflict, "INVALID_MOVE", err.Error())
 	default:
 		log.Printf("internal error: %v", err)
 		respondError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "internal server error")

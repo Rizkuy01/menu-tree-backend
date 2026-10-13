@@ -13,6 +13,26 @@ definitions:
     required:
     - name
     type: object
+  dto.MoveMenuRequest:
+    properties:
+      parent_id:
+        example: 56320ee9-6af6-11ed-a7ba-f220afe5e4a9
+        format: uuid
+        type: string
+      position:
+        example: 0
+        minimum: 0
+        type: integer
+    type: object
+  dto.ReorderMenuRequest:
+    properties:
+      position:
+        example: 0
+        minimum: 0
+        type: integer
+    required:
+    - position
+    type: object
   dto.UpdateMenuRequest:
     properties:
       name:
@@ -242,6 +262,93 @@ paths:
           schema:
             $ref: '#/definitions/handler.ErrorResponse'
       summary: Update a menu
+      tags:
+      - menus
+  /menus/{id}/move:
+    patch:
+      consumes:
+      - application/json
+      description: Moves a menu (with all its descendants) under a different parent.
+        Use parent_id null for root. Position is 0-based; omit it to append at the
+        end. Rejects moving a menu into itself or its own descendants.
+      parameters:
+      - description: Menu ID (UUID)
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Target parent and position
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.MoveMenuRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Menu'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Menu or parent not found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "409":
+          description: Invalid move (cycle)
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: Move a menu to another parent
+      tags:
+      - menus
+  /menus/{id}/reorder:
+    patch:
+      consumes:
+      - application/json
+      description: Changes the position of a menu among its siblings (same parent).
+        Position is 0-based and clamped to the last index.
+      parameters:
+      - description: Menu ID (UUID)
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: New position
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ReorderMenuRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Menu'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: Reorder a menu within its level
       tags:
       - menus
 swagger: "2.0"

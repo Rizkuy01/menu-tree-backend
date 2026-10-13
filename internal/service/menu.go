@@ -17,6 +17,7 @@ type MenuRepository interface {
 	GetAll(ctx context.Context) ([]model.Menu, error)
 	Update(ctx context.Context, id uuid.UUID, name string) (*model.Menu, error)
 	Delete(ctx context.Context, id uuid.UUID) error
+	Move(ctx context.Context, id uuid.UUID, newParentID *uuid.UUID, position *int) (*model.Menu, error)
 }
 
 type MenuService struct {
@@ -82,6 +83,24 @@ func (s *MenuService) Update(ctx context.Context, id uuid.UUID, name string) (*m
 
 func (s *MenuService) Delete(ctx context.Context, id uuid.UUID) error {
 	return s.repo.Delete(ctx, id)
+}
+
+func (s *MenuService) Move(ctx context.Context, id uuid.UUID, parentID *uuid.UUID, position *int) (*model.Menu, error) {
+	if position != nil && *position < 0 {
+		return nil, model.ErrInvalidPosition
+	}
+	return s.repo.Move(ctx, id, parentID, position)
+}
+
+func (s *MenuService) Reorder(ctx context.Context, id uuid.UUID, position int) (*model.Menu, error) {
+	if position < 0 {
+		return nil, model.ErrInvalidPosition
+	}
+	menu, err := s.repo.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	return s.repo.Move(ctx, id, menu.ParentID, &position)
 }
 
 // GetTree
