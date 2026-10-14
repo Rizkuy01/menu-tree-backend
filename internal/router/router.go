@@ -25,6 +25,12 @@ func New(menuHandler *handler.MenuHandler) *gin.Engine {
 	})
 
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	r.GET("/swagger.json", func(c *gin.Context) {
+		c.File("docs/swagger.json")
+	})
+	r.GET("/api/swagger.json", func(c *gin.Context) {
+		c.File("docs/swagger.json")
+	})
 
 	menus := r.Group("/api/menus")
 	{
